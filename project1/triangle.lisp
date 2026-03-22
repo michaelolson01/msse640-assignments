@@ -7,6 +7,14 @@
    Returns:
      A string describing the triangle type"
   (cond
+    ;; Check if inputs are numbers
+    ((not (numberp a)) "Invalid: All sides must be numbers")
+    ((not (numberp b)) "Invalid: All sides must be numbers")
+    ((not (numberp c)) "Invalid: All sides must be numbers")
+    ;; Check if inputs are complex numbers
+    ((complexp a) "Invalid: Complex numbers are not allowed")
+    ((complexp b) "Invalid: Complex numbers are not allowed")
+    ((complexp c) "Invalid: Complex numbers are not allowed")
     ;; Check if all sides are positive
     ((<= a 0) "Invalid: All sides must be positive numbers")
     ((<= b 0) "Invalid: All sides must be positive numbers")
@@ -36,5 +44,5 @@
       (finish-output)
       (let ((c (read)))
         (let ((result (classify-triangle a b c)))
-          (format t "~%Result: ~A~%" result))))))
+          (format t "~%Result: ~a~%" result))))))
 

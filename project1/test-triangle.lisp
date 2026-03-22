@@ -1,4 +1,4 @@
-(ql:quickload :fiveam)
+(ql:quickload :fiveam :silent t)
 
 (defpackage :triangle-test
   (:use :cl :fiveam))
@@ -27,7 +27,8 @@
   (is (string= "Isosceles triangle" (classify-triangle 12 12 13)))
   (is (string= "Isosceles triangle" (classify-triangle 5 5 7)))
   (is (string= "Isosceles triangle" (classify-triangle 5 7 5)))
-  (is (string= "Isosceles triangle" (classify-triangle 7 5 5))))
+  (is (string= "Isosceles triangle" (classify-triangle 7 5 5)))
+  (is (string= "Isosceles triangle" (classify-triangle #C(7 0) 5 5))))
 
 ;; Test scalene triangles
 (test scalene-triangle
@@ -55,6 +56,31 @@
   (is (string= "Not a triangle: Does not satisfy triangle inequality" (classify-triangle 1 2 3)))
   (is (string= "Not a triangle: Does not satisfy triangle inequality" (classify-triangle 10 5 3))))
 
+;; Test non-numeric inputs
+(test non-numeric-inputs
+  "Test that non-numeric inputs are rejected"
+  (is (string= "Invalid: All sides must be numbers" (classify-triangle "abc" 5 5)))
+  (is (string= "Invalid: All sides must be numbers" (classify-triangle 5 "xyz" 5)))
+  (is (string= "Invalid: All sides must be numbers" (classify-triangle 5 5 "test")))
+  (is (string= "Invalid: All sides must be numbers" (classify-triangle 'symbol 5 5)))
+  (is (string= "Invalid: All sides must be numbers" (classify-triangle 5 'another 5)))
+  (is (string= "Invalid: All sides must be numbers" (classify-triangle 5 5 'third)))
+  (is (string= "Invalid: All sides must be numbers" (classify-triangle nil 5 5)))
+  (is (string= "Invalid: All sides must be numbers" (classify-triangle 5 nil 5)))
+  (is (string= "Invalid: All sides must be numbers" (classify-triangle 5 5 nil))))
+
+;; Test complex number inputs
+(test complex-number-inputs
+  "Test that complex numbers are rejected"
+  (is (string= "Invalid: Complex numbers are not allowed" (classify-triangle #C(1 1) 5 5)))
+  (is (string= "Invalid: Complex numbers are not allowed" (classify-triangle 5 #C(2 3) 5)))
+  (is (string= "Invalid: Complex numbers are not allowed" (classify-triangle 5 5 #C(4 5))))
+  (is (string= "Invalid: Complex numbers are not allowed" (classify-triangle #C(0 1) #C(0 1) 5))))
+
 ;; Run all tests
 (format t "~%Running triangle classification tests...~%")
 (run! 'triangle-tests)
+
+(in-package :cl-user)
+;; Exit
+(quit)
