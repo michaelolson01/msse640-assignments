@@ -1,15 +1,15 @@
 # Introduction
-Hello, this is the simple introductory program used in *The Art of Software Testing*, the triangle program. I wrote the program in common lisp.
-To write the program, I wrote down the expectations of the program and test file, then I asked Claude to create and update the files with my specifications.
-Errors were handled in the program by filtering out illegal inputs:
-- Check to make sure we are getting numeric inputs
-- Check to make sure all inputs are positive
-- Check to make sure the triangle passes a triangle inequality test:
-  The sum of two of the sides must be less than or equal to the remaining side (Euclid, c. 300 BC).
-Unit tests are run using the common lisp "FiveAM" testing framework https://github.com/lispci/fiveam
+- This is the simple introductory program used in *The Art of Software Testing*, the triangle program. I wrote the program in common lisp.
+- To write the program, I wrote down the expectations of the program and test file, then I asked Claude to create and update the files with my specifications.
+- Errors were handled in the program by filtering out illegal inputs:
+  - Check to make sure we are getting numeric inputs
+  - Check to make sure all inputs are positive
+  - Check to make sure the triangle passes a triangle inequality test:
+    The sum of two of the sides must be less than or equal to the remaining side (Euclid, c. 300 BC).
+- Unit tests are run using the common lisp "FiveAM" testing framework https://github.com/lispci/fiveam
 # Details of the program
-What IDE did you use? Emacs
-How did you get data into the program? Prompt user for input.
+- What IDE did you use? Emacs
+- How did you get data into the program? Prompt user for input.
 # Table with example test data:
 The test data was created by Claude. I let it know what I expected it to test.
 
