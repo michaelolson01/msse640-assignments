@@ -142,7 +142,9 @@ The triangle server I created only has one endpoint: `/classify` that takes 3 in
 I understand that i  t was recommended to use Flask/Python for this, but I still used Common Lisp with Hunchentoot for the server.
 
 Demonstration Video:
-[Demo Video](./PostmanDemo.mp4)
+
+[Demo Video](https://regis365-my.sharepoint.com/:v:/g/personal/molson006_regis_edu/IQD7Iuyv20reT6-jmbh8mBTLAeWrkh-Z8umDlLR16aIr4wU?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=xWv7FU)
+
 1. Show API being used with HTML client
 2. Show API being used with curl
 3. Show API being used with Postman
