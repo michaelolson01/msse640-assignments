@@ -5,7 +5,7 @@
   - Check to make sure we are getting numeric inputs
   - Check to make sure all inputs are positive
   - Check to make sure the triangle passes a triangle inequality test:
-    The sum of two of the sides must be less than or equal to the remaining side (Euclid, c. 300 BC).
+    The sum of two of the sides must be less than or equal to the remaining side. [^1]
 - Unit tests are run using the common lisp "FiveAM" testing framework https://github.com/lispci/fiveam
 # Details of the program
 - What IDE did you use? Emacs
@@ -69,4 +69,4 @@ Unit tests were created from the table above. I chose these because they gave co
 ![Test output](./test-output.png "Test output")
 
 # References
-Euclid. (c. 300 BC). *The Elements*. 
+[^1]: Euclid. (c. 300 BC). *The Elements*. 
