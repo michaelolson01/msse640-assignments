@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testing Game - Equivalence Classes & Boundaries</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        .scenario-list {
+            display: none;
+        }
+
+        .scenario-list.active {
+            display: block;
+        }
+
+        .scenario-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .scenario-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .scenario-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .scenario-card p {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .game-play {
+            display: none;
+        }
+
+        .game-play.active {
+            display: block;
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+        }
+
+        .scenario-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .scenario-header h2 {
+            margin-bottom: 10px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .classes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .class-box {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .class-box.valid {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .class-box.invalid {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .class-box h4 {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .class-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .class-box li {
+            padding: 5px 0;
+            font-size: 0.95em;
+        }
+
+        .test-area {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .test-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .test-input-group input {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .test-input-group select {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            background: white;
+        }
+
+        .test-input-group button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .test-input-group button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .result {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result.valid {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+
+        .result.invalid {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+
+        .result.boundary {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+            font-weight: bold;
+        }
+
+        .test-history {
+            margin-top: 20px;
+        }
+
+        .test-history h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .test-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #ccc;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .test-item.valid {
+            border-left-color: #28a745;
+        }
+
+        .test-item.invalid {
+            border-left-color: #dc3545;
+        }
+
+        .test-item.boundary {
+            border-left-color: #ffc107;
+            font-weight: bold;
+        }
+
+        .solution-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .solution-btn:hover {
+            background: #138496;
+        }
+
+        .solution {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .solution.show {
+            display: block;
+        }
+
+        .solution h4 {
+            color: #0c5460;
+            margin-bottom: 15px;
+        }
+
+        .solution-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .solution-list li {
+            padding: 8px;
+            background: white;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 Testing Game</h1>
+            <p class="subtitle">Master Equivalence Classes & Boundary Value Testing</p>
+        </header>
+
+        <div class="game-container">
+            <!-- Scenario Selection -->
+            <div class="scenario-list active" id="scenarioList">
+                <h2 style="margin-bottom: 20px; color: #333;">Choose a Testing Scenario</h2>
+                <div id="scenariosContainer"></div>
+            </div>
+
+            <!-- Game Play -->
+            <div class="game-play" id="gamePlay">
+                <button class="back-btn" onclick="backToList()">← Back to Scenarios</button>
+                
+                <div class="scenario-header">
+                    <h2 id="scenarioTitle"></h2>
+                    <p id="scenarioDescription"></p>
+                </div>
+
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value" id="totalTests">0</div>
+                        <div class="stat-label">Values Tested</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="boundaryTests">0</div>
+                        <div class="stat-label">Boundary Values Found</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="errorsFound">0</div>
+                        <div class="stat-label" id="errorsFoundLabel">Errors Found (0/0)</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>📊 Equivalence Classes</h3>
+                    <p style="margin-bottom: 15px; color: #666;">These are groups of values that should behave the same way:</p>
+                    <div class="classes-grid">
+                        <div class="class-box valid">
+                            <h4>Valid Class</h4>
+                            <ul id="validClasses"></ul>
+                        </div>
+                        <div class="class-box invalid">
+                            <h4>Invalid Classes</h4>
+                            <ul id="invalidClasses"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>🎯 Test the Boundaries</h3>
+                    <p style="margin-bottom: 15px; color: #666;">
+                        Enter different values to see which equivalence class they belong to. 
+                        Focus on boundary values (edges of ranges) for thorough testing!
+                    </p>
+                    <div class="test-area">
+                        <div class="test-input-group">
+                            <input type="number" id="testValue" placeholder="Enter a test value">
+                            <button onclick="runTest()">Check Value</button>
+                        </div>
+                        <div class="result" id="testResult"></div>
+                        
+                        <div class="test-history" id="testHistory">
+                            <h4>Test History:</h4>
+                            <div id="testHistoryList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>🐛 Report Errors</h3>
+                    <p style="margin-bottom: 15px; color: #666;">
+                        Found an error in the specification? Report it here! Look for overlapping ranges, 
+                        missing boundary values, or incorrect class definitions.
+                    </p>
+                    <div class="test-area">
+                        <div class="test-input-group">
+                            <input type="text" id="errorReport" placeholder="Describe the error you found" style="flex: 2;">
+                            <button onclick="reportError()">Report Error</button>
+                        </div>
+                        <div class="result" id="errorResult"></div>
+                        
+                        <div class="test-history" id="errorHistory">
+                            <h4>Errors You've Found:</h4>
+                            <div id="errorHistoryList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="solution-btn" onclick="showSolution()">Show Solution & Key Boundary Values</button>
+                
+                <div class="solution" id="solution">
+                    <h4>📝 Solution</h4>
+                    <p style="margin-bottom: 15px;"><strong>Key Boundary Values to Test:</strong></p>
+                    <ul class="solution-list" id="boundaryValues"></ul>
+                    <p style="margin: 15px 0;"><strong>Sample Test Cases:</strong></p>
+                    <ul class="solution-list" id="testCases"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentScenario = null;
+        let testStats = { total: 0, boundaries: 0, classesFound: new Set() };
+        let testHistory = [];
+        let errorsFound = new Set();
+        let errorReports = [];
+
+        // Load scenarios on page load
+        async function loadScenarios() {
+            try {
+                const response = await fetch('/api/scenarios');
+                const scenarios = await response.json();
+                
+                const container = document.getElementById('scenariosContainer');
+                container.innerHTML = scenarios.map(s => `
+                    <div class="scenario-card" onclick="selectScenario(${s.id})">
+                        <h3>${s.title}</h3>
+                        <p>${s.description}</p>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading scenarios:', error);
+            }
+        }
+
+        async function selectScenario(id) {
+            try {
+                const response = await fetch(`/api/scenario?id=${id}`);
+                currentScenario = await response.json();
+                
+                // Reset stats
+                testStats = { total: 0, boundaries: 0, classesFound: new Set() };
+                testHistory = [];
+                errorsFound = new Set();
+                errorReports = [];
+                updateStats();
+                
+                // Show game play
+                document.getElementById('scenarioList').classList.remove('active');
+                document.getElementById('gamePlay').classList.add('active');
+                
+                // Populate scenario details
+                document.getElementById('scenarioTitle').textContent = currentScenario.title;
+                document.getElementById('scenarioDescription').textContent = currentScenario.description;
+                
+                // Populate equivalence classes
+                document.getElementById('validClasses').innerHTML = 
+                    currentScenario.validClasses.map(c => `<li>• ${c}</li>`).join('');
+                document.getElementById('invalidClasses').innerHTML = 
+                    currentScenario.invalidClasses.map(c => `<li>• ${c}</li>`).join('');
+                
+                // Clear previous results
+                document.getElementById('testResult').classList.remove('show');
+                document.getElementById('errorResult').classList.remove('show');
+                document.getElementById('solution').classList.remove('show');
+                document.getElementById('testHistoryList').innerHTML = '';
+                document.getElementById('errorHistoryList').innerHTML = '';
+                document.getElementById('testValue').value = '';
+                document.getElementById('errorReport').value = '';
+                
+                // Update error label
+                document.getElementById('errorsFoundLabel').textContent = 
+                    `Errors Found (0/${currentScenario.totalErrors})`;
+            } catch (error) {
+                console.error('Error loading scenario:', error);
+            }
+        }
+
+        async function runTest() {
+            const value = document.getElementById('testValue').value;
+            
+            if (value === '') {
+                alert('Please enter a test value');
+                return;
+            }
+            
+            try {
+                const response = await fetch(
+                    `/api/check?scenario-id=${currentScenario.id}&value=${value}`
+                );
+                const result = await response.json();
+                
+                // Update stats
+                testStats.total++;
+                if (result.isBoundary) testStats.boundaries++;
+                testStats.classesFound.add(result.class);
+                updateStats();
+                
+                // Add to history
+                testHistory.unshift({ value, result });
+                updateHistory();
+                
+                // Show result
+                const resultDiv = document.getElementById('testResult');
+                resultDiv.textContent = result.message;
+                let resultClass = result.isValid ? 'valid' : 'invalid';
+                if (result.isBoundary) resultClass = 'boundary';
+                resultDiv.className = `result show ${resultClass}`;
+                
+                // Clear input for next test
+                document.getElementById('testValue').value = '';
+                document.getElementById('testValue').focus();
+                
+            } catch (error) {
+                console.error('Error running test:', error);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalTests').textContent = testStats.total;
+            document.getElementById('boundaryTests').textContent = testStats.boundaries;
+            document.getElementById('errorsFound').textContent = errorsFound.size;
+            document.getElementById('errorsFoundLabel').textContent = 
+                `Errors Found (${errorsFound.size}/${currentScenario.totalErrors})`;
+        }
+
+        function updateHistory() {
+            const historyList = document.getElementById('testHistoryList');
+            historyList.innerHTML = testHistory.slice(0, 10).map(t => {
+                let itemClass = t.result.isValid ? 'valid' : 'invalid';
+                if (t.result.isBoundary) itemClass = 'boundary';
+                return `
+                    <div class="test-item ${itemClass}">
+                        Value: ${t.value} → ${t.result.class}
+                        ${t.result.isBoundary ? ' 🎯 [BOUNDARY]' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function reportError() {
+            const errorDesc = document.getElementById('errorReport').value.trim();
+            
+            if (errorDesc === '') {
+                alert('Please describe the error you found');
+                return;
+            }
+            
+            try {
+                const response = await fetch(
+                    `/api/report-error?scenario-id=${currentScenario.id}&error-description=${encodeURIComponent(errorDesc)}`
+                );
+                const result = await response.json();
+                
+                const resultDiv = document.getElementById('errorResult');
+                resultDiv.textContent = result.message;
+                
+                if (result.found) {
+                    resultDiv.className = 'result show valid';
+                    errorsFound.add(result.errorId);
+                    errorReports.unshift({ description: errorDesc, found: true, actual: result.description });
+                    updateStats();
+                } else {
+                    resultDiv.className = 'result show invalid';
+                    errorReports.unshift({ description: errorDesc, found: false });
+                }
+                
+                updateErrorHistory();
+                document.getElementById('errorReport').value = '';
+                
+            } catch (error) {
+                console.error('Error reporting error:', error);
+            }
+        }
+
+        function updateErrorHistory() {
+            const historyList = document.getElementById('errorHistoryList');
+            historyList.innerHTML = errorReports.map(e => `
+                <div class="test-item ${e.found ? 'valid' : 'invalid'}">
+                    ${e.found ? '✓' : '✗'} ${e.description}
+                    ${e.found ? `<br><em>Actual: ${e.actual}</em>` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function showSolution() {
+            try {
+                const response = await fetch(`/api/solution?id=${currentScenario.id}`);
+                const solution = await response.json();
+                
+                console.log('Solution object:', solution); // Debug log
+                
+                // Handle both camelCase and hyphenated property names
+                const boundaryValues = solution.boundaryValues || solution['boundary-values'] || [];
+                const testCases = solution.testCases || solution['test-cases'] || [];
+                const errors = solution.errors || [];
+                
+                document.getElementById('boundaryValues').innerHTML = 
+                    boundaryValues.map(v => `<li>${v}</li>`).join('');
+                
+                document.getElementById('testCases').innerHTML = 
+                    testCases.map(tc => {
+                        const [value, result] = tc;
+                        return `<li>Value: ${value} → Expected: ${String(result).toUpperCase()}</li>`;
+                    }).join('');
+                
+                // Check if errors section already exists, if not create it
+                let errorsSection = document.getElementById('errorsSection');
+                if (!errorsSection) {
+                    errorsSection = document.createElement('div');
+                    errorsSection.id = 'errorsSection';
+                    document.getElementById('solution').appendChild(errorsSection);
+                }
+                
+                // Add errors to solution display
+                errorsSection.innerHTML = 
+                    '<p style="margin: 15px 0;"><strong>Errors in Specification:</strong></p>' +
+                    '<ul class="solution-list">' +
+                    errors.map(e => `<li>${e.description} (Location: ${e.location})</li>`).join('') +
+                    '</ul>';
+                
+                document.getElementById('solution').classList.add('show');
+            } catch (error) {
+                console.error('Error loading solution:', error);
+                console.error('Error details:', error.message);
+            }
+        }
+
+        function backToList() {
+            document.getElementById('gamePlay').classList.remove('active');
+            document.getElementById('scenarioList').classList.add('active');
+        }
+
+        // Load scenarios when page loads
+        loadScenarios();
+    </script>
+</body>
+</html>
