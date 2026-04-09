@@ -10,63 +10,74 @@
 (defvar *db-path* "users.db"
   "Path to the SQLite database file.")
 
+(defvar *db* nil
+  "Persistent database connection.")
+
+(defvar *db-lock* (bt:make-lock "db-lock")
+  "Lock for serializing database access.")
+
+(defmacro with-db (&body body)
+  "Execute body with exclusive database access."
+  `(bt:with-lock-held (*db-lock*)
+                      ,@body))
+
 ;;; Database functions
 
 (defun init-db ()
   "Initialize the SQLite database with the users table."
-  (sqlite:with-open-database (db *db-path*)
-    (sqlite:execute-non-query db
-      "CREATE TABLE IF NOT EXISTS users (
-         id INTEGER PRIMARY KEY AUTOINCREMENT,
-         username TEXT UNIQUE NOT NULL,
-         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-       )")))
+  (setf *db* (sqlite:connect *db-path*))
+  (sqlite:execute-non-query *db* "PRAGMA journal_mode=WAL")
+  (sqlite:execute-non-query *db* "PRAGMA busy_timeout=5000")
+  (sqlite:execute-non-query *db*
+                            "CREATE TABLE IF NOT EXISTS users (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+       username TEXT UNIQUE NOT NULL,
+       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+     )"))
 
 (defun add-user (username)
-  "Add a new user to the database. Returns T on success, NIL if user exists."
   (handler-case
-      (sqlite:with-open-database (db *db-path*)
-        (sqlite:execute-non-query db
-          "INSERT INTO users (username) VALUES (?)"
-          username)
-        t)
+      (with-db
+       (sqlite:execute-non-query *db*
+                                 "INSERT INTO users (username) VALUES (?)"
+                                 username)
+       t)
     (sqlite:sqlite-error (e)
-      (if (search "UNIQUE constraint failed" (format nil "~A" e))
-          nil
-          (error e)))))
+                         (if (search "UNIQUE constraint failed" (format nil "~A" e))
+                             nil
+                           (error e)))))
 
 (defun get-all-users ()
-  "Get all users from the database. Returns a list of plists."
-  (sqlite:with-open-database (db *db-path*)
-    (let ((rows (sqlite:execute-to-list db
-                  "SELECT id, username, created_at FROM users ORDER BY created_at DESC")))
-      (mapcar (lambda (row)
-                (list :id (first row)
-                      :username (second row)
-                      :created_at (third row)))
-              rows))))
+  (with-db
+   (let ((rows (sqlite:execute-to-list *db*
+                                       "SELECT id, username, created_at FROM users ORDER BY created_at DESC")))
+     (mapcar (lambda (row)
+               (list :id (first row)
+                     :username (second row)
+                     :created_at (third row)))
+             rows))))
 
 (defun get-user (username)
-  "Get a specific user by username. Returns a plist or NIL."
-  (sqlite:with-open-database (db *db-path*)
-    (let ((rows (sqlite:execute-to-list db
-                  "SELECT id, username, created_at FROM users WHERE username = ?"
-                  username)))
-      (when rows
-        (let ((row (first rows)))
-          (list :id (first row)
-                :username (second row)
-                :created_at (third row)))))))
+  (with-db
+   (let ((rows (sqlite:execute-to-list *db*
+                                       "SELECT id, username, created_at FROM users WHERE username = ?"
+                                       username)))
+     (when rows
+       (let ((row (first rows)))
+         (list :id (first row)
+               :username (second row)
+               :created_at (third row)))))))
 
 (defun delete-user (username)
-  "Delete a user by username. Returns T if deleted, NIL if not found."
-  (let ((existed (user-exists-p username)))
-    (when existed
-      (sqlite:with-open-database (db *db-path*)
-        (sqlite:execute-non-query db
-          "DELETE FROM users WHERE username = ?"
-          username)))
-    existed))
+  (with-db
+   (let ((rows (sqlite:execute-to-list *db*
+                                       "SELECT id FROM users WHERE username = ?"
+                                       username)))
+     (when rows
+       (sqlite:execute-non-query *db*
+                                 "DELETE FROM users WHERE username = ?"
+                                 username)
+       t))))
 
 (defun user-exists-p (username)
   "Check if a user exists in the database."
@@ -77,25 +88,25 @@
 (defun plist-to-json (plist)
   "Convert a plist to JSON string."
   (with-output-to-string (s)
-    (write-char #\{ s)
-    (loop for (key value) on plist by #'cddr
-          for first = t then nil
-          unless first do (write-string ", " s)
-          do (format s "\"~A\": " (string-downcase (symbol-name key)))
-          do (if (stringp value)
-                 (format s "\"~A\"" value)
-                 (format s "~A" value)))
-    (write-char #\} s)))
+                         (write-char #\{ s)
+                         (loop for (key value) on plist by #'cddr
+                               for first = t then nil
+                               unless first do (write-string ", " s)
+                               do (format s "\"~A\": " (string-downcase (symbol-name key)))
+                               do (if (stringp value)
+                                      (format s "\"~A\"" value)
+                                    (format s "~A" value)))
+                         (write-char #\} s)))
 
 (defun list-to-json-array (list)
   "Convert a list of plists to JSON array string."
   (with-output-to-string (s)
-    (write-char #\[ s)
-    (loop for item in list
-          for first = t then nil
-          unless first do (write-string ", " s)
-          do (write-string (plist-to-json item) s))
-    (write-char #\] s)))
+                         (write-char #\[ s)
+                         (loop for item in list
+                               for first = t then nil
+                               unless first do (write-string ", " s)
+                               do (write-string (plist-to-json item) s))
+                         (write-char #\] s)))
 
 ;;; HTTP handlers
 
@@ -114,61 +125,61 @@
         (when (and json-str (> (length json-str) 0))
           (cl-json:decode-json-from-string json-str)))
     (error (e)
-      (format t "Error parsing JSON: ~A~%" e)
-      nil)))
+           (format t "Error parsing JSON: ~A~%" e)
+           nil)))
 
 (define-easy-handler (users-handler :uri "/users") ()
-  (set-json-headers)
-  (cond
-    ((eq (request-method*) :OPTIONS)
-     ;; Handle CORS preflight
-     "")
-    ((eq (request-method*) :GET)
-     ;; List all users
-     (let ((users (get-all-users)))
-       (list-to-json-array users)))
-    ((eq (request-method*) :POST)
-     ;; Create a new user
-     (let* ((json-data (parse-json-body))
-            (username (cdr (assoc :username json-data))))
-       (cond
-         ((null username)
-          (setf (return-code*) +http-bad-request+)
-          "{\"error\": \"Username is required\"}")
-         ((string= username "")
-          (setf (return-code*) +http-bad-request+)
-          "{\"error\": \"Username cannot be empty\"}")
-         ((add-user username)
-          (setf (return-code*) +http-created+)
-          (let ((user (get-user username)))
-            (plist-to-json user)))
-         (t
-          (setf (return-code*) +http-conflict+)
-          "{\"error\": \"Username already exists\"}"))))
-    (t
-     (setf (return-code*) +http-method-not-allowed+)
-     "{\"error\": \"Method not allowed\"}")))
+                     (set-json-headers)
+                     (cond
+                      ((eq (request-method*) :OPTIONS)
+                       ;; Handle CORS preflight
+                       "")
+                      ((eq (request-method*) :GET)
+                       ;; List all users
+                       (let ((users (get-all-users)))
+                         (list-to-json-array users)))
+                      ((eq (request-method*) :POST)
+                       ;; Create a new user
+                       (let* ((json-data (parse-json-body))
+                              (username (cdr (assoc :username json-data))))
+                         (cond
+                          ((null username)
+                           (setf (return-code*) +http-bad-request+)
+                           "{\"error\": \"Username is required\"}")
+                          ((string= username "")
+                           (setf (return-code*) +http-bad-request+)
+                           "{\"error\": \"Username cannot be empty\"}")
+                          ((add-user username)
+                           (setf (return-code*) +http-created+)
+                           (let ((user (get-user username)))
+                             (plist-to-json user)))
+                          (t
+                           (setf (return-code*) +http-conflict+)
+                           "{\"error\": \"Username already exists\"}"))))
+                      (t
+                       (setf (return-code*) +http-method-not-allowed+)
+                       "{\"error\": \"Method not allowed\"}")))
 
 (defun user-detail-handler (username)
   "Handler for /users/:username endpoints"
   (set-json-headers)
   (cond
-    ((eq (request-method*) :GET)
-     (let ((user (get-user username)))
-       (if user
-           (plist-to-json user)
-           (progn
-             (setf (return-code*) +http-not-found+)
-             "{\"error\": \"User not found\"}"))))
-    ((eq (request-method*) :DELETE)
-     (if (delete-user username)
-         "{\"message\": \"User deleted successfully\"}"
-         (progn
-           (setf (return-code*) +http-not-found+)
-           "{\"error\": \"User not found\"}")))
-    (t
-     (setf (return-code*) +http-method-not-allowed+)
-     "{\"error\": \"Method not allowed\"}")))
+   ((eq (request-method*) :GET)
+    (let ((user (get-user username)))
+      (if user
+          (plist-to-json user)
+        (progn
+          (setf (return-code*) +http-not-found+)
+          "{\"error\": \"User not found\"}"))))
+   ((eq (request-method*) :DELETE)
+    (if (delete-user username)
+        "{\"message\": \"User deleted successfully\"}"
+      (progn
+        (setf (return-code*) +http-not-found+)
+        "{\"error\": \"User not found\"}")))
+   (t
+    (setf (return-code*) +http-method-not-allowed+)
+    "{\"error\": \"Method not allowed\"}")))
 
 (defun user-detail-dispatcher (request)
   "Custom dispatcher for /users/:username paths"
@@ -183,8 +194,8 @@
 (push 'user-detail-dispatcher *dispatch-table*)
 
 (define-easy-handler (index-handler :uri "/") ()
-  (setf (content-type*) "text/html")
-  "<html>
+                     (setf (content-type*) "text/html")
+                     "<html>
     <head><title>User Management API</title></head>
     <body>
       <h1>User Management API</h1>
@@ -224,15 +235,19 @@ curl -X DELETE http://localhost:8081/users/john
   (init-db)
   (format t "Database initialized at ~A~%" *db-path*)
   
-  (setf *server* (make-instance 'easy-acceptor :port port))
+  (setf *server* (make-instance 'easy-acceptor
+                                :port port
+                                :taskmaster (make-instance 'hunchentoot:one-thread-per-connection-taskmaster)))
   (start *server*)
   (format t "User API server started on port ~A~%" port)
   (format t "Visit http://localhost:~A/ for API documentation~%" port)
   *server*)
 
 (defun stop-server ()
-  "Stop the Hunchentoot server."
   (when *server*
     (stop *server*)
-    (setf *server* nil)
-    (format t "Server stopped.~%")))
+    (setf *server* nil))
+  (when *db*
+    (sqlite:disconnect *db*)
+    (setf *db* nil))
+  (format t "Server stopped.~%"))
