@@ -10,3 +10,6 @@ data/
 # Ignore dependencies
 node_modules/
 _opam/
+
+# Ignore the Databases
+*.db
