@@ -114,7 +114,11 @@ export default {
       return progress && progress.attempts > 0
     },
     selectLevel(level) {
-      this.$router.push(`/level/${level.id}`)
+      if (level.levelType === 'pairwise') {
+        this.$router.push(`/pairwise/${level.id}`)
+      } else {
+        this.$router.push(`/level/${level.id}`)
+      }
     }
   }
 }
