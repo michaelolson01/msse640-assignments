@@ -1,1 +1,12 @@
 .aider*
+# ignore build artifacts
+_build/
+*.beam
+
+# Ignore large data files
+data/
+*.csv
+
+# Ignore dependencies
+node_modules/
+_opam/
