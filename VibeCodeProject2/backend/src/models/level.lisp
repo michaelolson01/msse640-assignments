@@ -20,10 +20,7 @@
     (:config . ,(cl-json:decode-json-from-string 
                  (or (slot-value level 'testcraft.database::config) "{}")))
     (:solution . ,(cl-json:decode-json-from-string 
-                   (or (slot-value level 'testcraft.database::solution) "{}")))
-    ;; Add camelCase versions for frontend compatibility
-    (:level-number . ,(slot-value level 'testcraft.database::level-number))
-    (:level-type . ,(slot-value level 'testcraft.database::level-type))))
+                   (or (slot-value level 'testcraft.database::solution) "{}")))))
 
 (defun get-all-levels ()
   "Get all levels"
