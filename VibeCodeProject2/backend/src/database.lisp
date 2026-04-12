@@ -42,7 +42,8 @@
                :default 0)
    (attempts :col-type :integer
              :default 0)
-   (completed-at :col-type :timestamp)))
+   (completed-at :col-type :timestamp
+                 :default (:raw "CURRENT_TIMESTAMP"))))
 
 (mito:deftable score ()
   ((user-id :col-type :integer
