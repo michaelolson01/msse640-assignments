@@ -1,11 +1,14 @@
 <template>
   <div class="pairwise-level">
-    <div class="level-header">
-      <h1>{{ level.title }}</h1>
-      <p>{{ level.description }}</p>
-    </div>
+    <div v-if="loading" class="loading">Loading level...</div>
+    
+    <div v-else-if="level">
+      <div class="level-header">
+        <h1>{{ level.title }}</h1>
+        <p>{{ level.description }}</p>
+      </div>
 
-    <div class="level-content">
+      <div class="level-content">
       <div class="builder-section">
         <PairwiseTestBuilder 
           :level="level"
@@ -34,6 +37,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
@@ -97,6 +101,12 @@ export default {
 </script>
 
 <style scoped>
+.loading {
+  text-align: center;
+  padding: 50px;
+  color: #7f8c8d;
+}
+
 .pairwise-level {
   padding: 2rem;
   max-width: 1200px;
