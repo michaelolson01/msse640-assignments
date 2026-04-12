@@ -97,7 +97,7 @@ export default {
     getLevelsByChapter(chapter) {
       return this.levels
         .filter(l => l.chapter === chapter)
-        .sort((a, b) => a['level-number'] - b['level-number'])
+        .sort((a, b) => a.levelNumber - b.levelNumber)
     },
     getChapterTitle(chapter) {
       return chapter === 1 ? 'Decision Tables' : 'Pairwise Testing'
