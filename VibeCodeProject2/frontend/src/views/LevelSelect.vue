@@ -20,7 +20,7 @@
             @click="selectLevel(level)"
           >
             <div class="level-header">
-              <h3>Level {{ level['level-number'] }}</h3>
+              <h3>Level {{ level.levelNumber }}</h3>
               <span class="difficulty" :class="level.difficulty">
                 {{ level.difficulty }}
               </span>
@@ -30,7 +30,7 @@
             <p>{{ level.description }}</p>
             
             <div class="level-type">
-              {{ level['level-type'] === 'decision_table' ? '📊 Decision Table' : '🔬 Pairwise Testing' }}
+              {{ level.levelType === 'decision_table' ? '📊 Decision Table' : '🔬 Pairwise Testing' }}
             </div>
 
             <div v-if="getProgress(level.id)" class="progress-info">
