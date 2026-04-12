@@ -97,7 +97,7 @@
               ;; Save score
               (save-score user-id level-id total-score completeness efficiency 0 accuracy)
               ;; Update progress
-              (update-user-progress user-id level-id total-score)
+              (update-user-progress user-id level-id total-score completeness efficiency accuracy)
               (success-response result))
             (error-response "User ID, level ID, and solution required")))
     (error (e)
