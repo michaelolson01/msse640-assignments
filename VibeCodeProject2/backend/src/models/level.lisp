@@ -9,7 +9,7 @@
 (in-package :testcraft.models.level)
 
 (defun level-to-alist (level)
-  "Convert a level DAO object to an alist"
+  "Convert a level DAO object to an alist with camelCase keys"
   `((:id . ,(mito:object-id level))
     (:chapter . ,(slot-value level 'testcraft.database::chapter))
     (:level-number . ,(slot-value level 'testcraft.database::level-number))
@@ -20,7 +20,10 @@
     (:config . ,(cl-json:decode-json-from-string 
                  (or (slot-value level 'testcraft.database::config) "{}")))
     (:solution . ,(cl-json:decode-json-from-string 
-                   (or (slot-value level 'testcraft.database::solution) "{}")))))
+                   (or (slot-value level 'testcraft.database::solution) "{}")))
+    ;; Add camelCase versions for frontend compatibility
+    (:level-number . ,(slot-value level 'testcraft.database::level-number))
+    (:level-type . ,(slot-value level 'testcraft.database::level-type))))
 
 (defun get-all-levels ()
   "Get all levels"
