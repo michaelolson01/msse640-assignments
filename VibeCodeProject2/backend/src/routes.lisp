@@ -89,7 +89,7 @@
                   (let* ((level-type (cdr (assoc :level-type level)))
                          (level-solution (cdr (assoc :solution level)))
                          (level-config (cdr (assoc :config level))))
-                    (if (null level-type)
+                    (if (or (null level-type) (not (stringp level-type)))
                         (error-response "Level not found or invalid")
                         (let* ((result (if (string= level-type "decision_table")
                                           (validate-decision-table solution level-solution)
@@ -100,7 +100,7 @@
                                (accuracy (cdr (assoc :accuracy result))))
                           ;; Save score
                           (save-score user-id level-id total-score completeness efficiency 0 accuracy)
-                          ;; Update progress
+                          ;; Update progress with current timestamp
                           (update-user-progress user-id level-id total-score completeness efficiency accuracy)
                           (success-response result))))))
             (error-response "User ID, level ID, and solution required")))
