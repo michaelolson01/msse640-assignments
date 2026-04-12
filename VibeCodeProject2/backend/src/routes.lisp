@@ -93,19 +93,28 @@
                     (format t "Level type: ~a (stringp: ~a)~%" level-type (stringp level-type))
                     (if (or (null level-type) (not (stringp level-type)))
                         (error-response "Level not found or invalid")
-                        (let* ((result (if (string= level-type "decision_table")
-                                          (validate-decision-table solution level-solution)
-                                          (validate-pairwise solution level-solution level-config)))
+                        (let* ((result (handler-case
+                                        (if (string= level-type "decision_table")
+                                            (validate-decision-table solution level-solution)
+                                            (validate-pairwise solution level-solution level-config))
+                                        (error (e)
+                                          (format t "Validation error: ~a~%" e)
+                                          (error-response (format nil "Validation failed: ~a" e)))))
                                (total-score (cdr (assoc :total result)))
                                (completeness (cdr (assoc :completeness result)))
                                (efficiency (cdr (assoc :efficiency result)))
                                (accuracy (cdr (assoc :accuracy result))))
-                          (format t "Validation result - score: ~a, completeness: ~a~%" total-score completeness)
-                          ;; Save score
-                          (save-score user-id level-id total-score completeness efficiency 0 accuracy)
-                          ;; Update progress with current timestamp
-                          (update-user-progress user-id level-id total-score completeness efficiency accuracy)
-                          (success-response result))))))
+                          (if (assoc :success result)
+                              ;; Error response from validation
+                              result
+                              ;; Success - save and update
+                              (progn
+                                (format t "Validation result - score: ~a, completeness: ~a~%" total-score completeness)
+                                ;; Save score
+                                (save-score user-id level-id total-score completeness efficiency 0 accuracy)
+                                ;; Update progress with current timestamp
+                                (update-user-progress user-id level-id total-score completeness efficiency accuracy)
+                                (success-response result))))))))))
             (error-response "User ID, level ID, and solution required")))
     (error (e)
       (format t "Submit solution error: ~a~%" e)

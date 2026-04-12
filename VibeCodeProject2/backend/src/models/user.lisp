@@ -44,4 +44,4 @@
             :best-score score
             :attempts 1
             :completed completed-p
-            :completed-at (when completed-p (local-time:now)))))))
+            :completed-at (local-time:now))))))
