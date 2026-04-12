@@ -8,9 +8,9 @@
     <div class="table-container">
       <table class="decision-table">
         <thead>
-          <tr>
-            <th class="label-column">Conditions / Actions</th>
-            <th v-for="(rule, index) in rules" :key="'rule-' + index" class="rule-column">
+          <tr class="section-header">
+            <th class="label-column">Conditions</th>
+            <th v-for="(rule, index) in rules" :key="'cond-rule-' + index" class="rule-column">
               <div class="rule-header">
                 Rule {{ index + 1 }}
                 <button @click="removeRule(index)" class="btn-small btn-danger" v-if="rules.length > 1">×</button>
@@ -35,12 +35,19 @@
             <td></td>
           </tr>
 
-          <!-- Separator -->
-          <tr class="separator-row">
-            <td colspan="100"></td>
+        </tbody>
+        
+        <!-- Actions Section -->
+        <thead>
+          <tr class="section-header">
+            <th class="label-column">Actions</th>
+            <th v-for="(rule, index) in rules" :key="'act-rule-' + index" class="rule-column">
+              Rule {{ index + 1 }}
+            </th>
+            <th></th>
           </tr>
-
-          <!-- Actions Section -->
+        </thead>
+        <tbody>
           <tr v-for="action in actions" :key="action.id" class="action-row">
             <td class="label-cell">{{ action.name }}</td>
             <td v-for="(rule, ruleIndex) in rules" :key="'act-' + ruleIndex">
@@ -217,10 +224,12 @@ export default {
   background-color: #f8f9fa;
 }
 
-.separator-row td {
-  background-color: #333;
-  height: 3px;
-  padding: 0;
+.section-header th {
+  background-color: #2e7d32;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .condition-select {
