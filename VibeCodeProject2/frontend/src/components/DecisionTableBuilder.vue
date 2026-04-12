@@ -85,8 +85,21 @@ export default {
   methods: {
     initializeTable() {
       const config = this.level.config
-      this.conditions = config.conditions || []
-      this.actions = config.actions || []
+      
+      // Parse the config structure which is an array of [type, ...items]
+      if (Array.isArray(config)) {
+        config.forEach(section => {
+          if (Array.isArray(section) && section.length > 0) {
+            const [type, ...items] = section
+            if (type === 'conditions') {
+              this.conditions = items
+            } else if (type === 'actions') {
+              this.actions = items
+            }
+          }
+        })
+      }
+      
       this.addRule()
     },
     addRule() {
