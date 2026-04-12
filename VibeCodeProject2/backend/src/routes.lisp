@@ -82,6 +82,7 @@
              (user-id (cdr (assoc :user-id json-data)))
              (level-id (cdr (assoc :level-id json-data)))
              (solution (cdr (assoc :solution json-data))))
+        (format t "Submit data - user-id: ~a, level-id: ~a, solution: ~a~%" user-id level-id (if solution "present" "nil"))
         (if (and user-id level-id (not (null solution)))
             (let* ((level (get-level-by-id level-id)))
               (if (null level)
@@ -89,6 +90,7 @@
                   (let* ((level-type (cdr (assoc :level-type level)))
                          (level-solution (cdr (assoc :solution level)))
                          (level-config (cdr (assoc :config level))))
+                    (format t "Level type: ~a (stringp: ~a)~%" level-type (stringp level-type))
                     (if (or (null level-type) (not (stringp level-type)))
                         (error-response "Level not found or invalid")
                         (let* ((result (if (string= level-type "decision_table")
@@ -98,6 +100,7 @@
                                (completeness (cdr (assoc :completeness result)))
                                (efficiency (cdr (assoc :efficiency result)))
                                (accuracy (cdr (assoc :accuracy result))))
+                          (format t "Validation result - score: ~a, completeness: ~a~%" total-score completeness)
                           ;; Save score
                           (save-score user-id level-id total-score completeness efficiency 0 accuracy)
                           ;; Update progress with current timestamp
