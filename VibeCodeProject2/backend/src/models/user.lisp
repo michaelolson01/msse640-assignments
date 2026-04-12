@@ -1,8 +1,7 @@
 (defpackage :testcraft.models.user
-  (:use :cl)
+  (:use :cl :mito :local-time)
   (:import-from :testcraft.database
-                :execute-query
-                :execute-non-query)
+                :user-progress)
   (:export :get-user-progress
            :update-user-progress))
 
@@ -10,38 +9,37 @@
 
 (defun get-user-progress (user-id)
   "Get all progress for a user"
-  (let ((results (execute-query
-                  "SELECT level_id, completed, best_score, attempts 
-                   FROM user_progress WHERE user_id = ?"
-                  user-id)))
-    (mapcar (lambda (row)
-              `((:level-id . ,(first row))
-                (:completed . ,(second row))
-                (:best-score . ,(third row))
-                (:attempts . ,(fourth row))))
-            results)))
+  (let ((progress-list (mito:select-dao 'user-progress
+                         (sxql:where (:= :user-id user-id)))))
+    (mapcar (lambda (progress)
+              `((:level-id . ,(slot-value progress 'testcraft.database::level-id))
+                (:completed . ,(slot-value progress 'testcraft.database::completed))
+                (:best-score . ,(slot-value progress 'testcraft.database::best-score))
+                (:attempts . ,(slot-value progress 'testcraft.database::attempts))))
+            progress-list)))
 
 (defun update-user-progress (user-id level-id score)
   "Update user progress for a level"
-  (let ((existing (execute-query
-                   "SELECT best_score, attempts FROM user_progress 
-                    WHERE user_id = ? AND level_id = ?"
-                   user-id level-id)))
+  (let ((existing (car (mito:select-dao 'user-progress
+                         (sxql:where (:and (:= :user-id user-id)
+                                          (:= :level-id level-id)))))))
     (if existing
         ;; Update existing progress
-        (let* ((row (car existing))
-               (best-score (first row))
-               (attempts (second row))
+        (let* ((best-score (slot-value existing 'testcraft.database::best-score))
+               (attempts (slot-value existing 'testcraft.database::attempts))
                (new-best (max score best-score))
-               (completed (if (>= score 100) 1 0)))
-          (execute-non-query
-           "UPDATE user_progress 
-            SET best_score = ?, attempts = ?, completed = ?,
-                completed_at = CASE WHEN ? = 1 THEN CURRENT_TIMESTAMP ELSE completed_at END
-            WHERE user_id = ? AND level_id = ?"
-           new-best (1+ attempts) completed completed user-id level-id))
+               (completed (if (>= score 100) t nil)))
+          (setf (slot-value existing 'testcraft.database::best-score) new-best)
+          (setf (slot-value existing 'testcraft.database::attempts) (1+ attempts))
+          (setf (slot-value existing 'testcraft.database::completed) completed)
+          (when completed
+            (setf (slot-value existing 'testcraft.database::completed-at) (local-time:now)))
+          (mito:save-dao existing))
         ;; Insert new progress
-        (execute-non-query
-         "INSERT INTO user_progress (user_id, level_id, best_score, attempts, completed)
-          VALUES (?, ?, ?, 1, ?)"
-         user-id level-id score (if (>= score 100) 1 0)))))
+        (mito:create-dao 'user-progress
+          :user-id user-id
+          :level-id level-id
+          :best-score score
+          :attempts 1
+          :completed (if (>= score 100) t nil)
+          :completed-at (when (>= score 100) (local-time:now))))))
