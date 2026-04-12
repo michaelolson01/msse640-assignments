@@ -18,8 +18,9 @@
                 (:attempts . ,(slot-value progress 'testcraft.database::attempts))))
             progress-list)))
 
-(defun update-user-progress (user-id level-id score)
+(defun update-user-progress (user-id level-id score completeness efficiency accuracy)
   "Update user progress for a level"
+  (declare (ignore completeness efficiency accuracy))
   (let ((existing (car (mito:select-dao 'user-progress
                          (sxql:where (:and (:= :user-id user-id)
                                           (:= :level-id level-id)))))))
