@@ -1,138 +1,115 @@
 (defpackage :testcraft.database
-  (:use :cl :sqlite)
-  (:export :*db*
-           :init-db
-           :execute-query
-           :execute-non-query
-           :query-one
-           :query-all))
+  (:use :cl :mito)
+  (:export :init-db
+           :user
+           :level
+           :user-progress
+           :score))
 
 (in-package :testcraft.database)
 
-(defvar *db* nil "Database connection")
-(defvar *db-path* "data/testcraft.db")
+;; Define models
+(mito:deftable user ()
+  ((username :col-type (:varchar 255)
+             :unique t
+             :not-null t)
+   (password-hash :col-type :text
+                  :not-null t)
+   (email :col-type (:varchar 255))))
+
+(mito:deftable level ()
+  ((chapter :col-type :integer
+            :not-null t)
+   (level-number :col-type :integer
+                 :not-null t)
+   (title :col-type (:varchar 255)
+          :not-null t)
+   (description :col-type :text)
+   (level-type :col-type (:varchar 50)
+               :not-null t)
+   (difficulty :col-type (:varchar 50))
+   (config :col-type :text)
+   (solution :col-type :text)))
+
+(mito:deftable user-progress ()
+  ((user-id :col-type :integer
+            :not-null t)
+   (level-id :col-type :integer
+             :not-null t)
+   (completed :col-type :boolean
+              :default nil)
+   (best-score :col-type :integer
+               :default 0)
+   (attempts :col-type :integer
+             :default 0)
+   (completed-at :col-type :timestamp)))
+
+(mito:deftable score ()
+  ((user-id :col-type :integer
+            :not-null t)
+   (level-id :col-type :integer
+             :not-null t)
+   (score :col-type :integer
+          :not-null t)
+   (completeness :col-type :integer)
+   (efficiency :col-type :integer)
+   (time-bonus :col-type :integer)
+   (accuracy :col-type :integer)
+   (submitted-at :col-type :timestamp
+                 :default (:raw "CURRENT_TIMESTAMP"))))
 
 (defun init-db ()
   "Initialize database connection and create tables if needed"
-  (ensure-directories-exist "data/")
-  (setf *db* (sqlite:connect *db-path*))
-  (create-tables))
-
-(defun create-tables ()
-  "Create database tables if they don't exist"
-  ;; Users table
-  (sqlite:execute-non-query *db*
-    "CREATE TABLE IF NOT EXISTS users (
-       id INTEGER PRIMARY KEY AUTOINCREMENT,
-       username TEXT UNIQUE NOT NULL,
-       password_hash TEXT NOT NULL,
-       email TEXT,
-       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-     )")
+  (uiop:ensure-all-directories-exist (list "data/"))
   
-  ;; Levels table
-  (sqlite:execute-non-query *db*
-    "CREATE TABLE IF NOT EXISTS levels (
-       id INTEGER PRIMARY KEY AUTOINCREMENT,
-       chapter INTEGER NOT NULL,
-       level_number INTEGER NOT NULL,
-       title TEXT NOT NULL,
-       description TEXT,
-       level_type TEXT NOT NULL,
-       difficulty TEXT,
-       config TEXT,
-       solution TEXT,
-       UNIQUE(chapter, level_number)
-     )")
+  ;; Connect to SQLite database
+  (mito:connect-toplevel :sqlite3 :database-name "data/testcraft.db")
   
-  ;; User progress table
-  (sqlite:execute-non-query *db*
-    "CREATE TABLE IF NOT EXISTS user_progress (
-       id INTEGER PRIMARY KEY AUTOINCREMENT,
-       user_id INTEGER NOT NULL,
-       level_id INTEGER NOT NULL,
-       completed BOOLEAN DEFAULT 0,
-       best_score INTEGER DEFAULT 0,
-       attempts INTEGER DEFAULT 0,
-       completed_at TIMESTAMP,
-       FOREIGN KEY (user_id) REFERENCES users(id),
-       FOREIGN KEY (level_id) REFERENCES levels(id),
-       UNIQUE(user_id, level_id)
-     )")
-  
-  ;; Scores table
-  (sqlite:execute-non-query *db*
-    "CREATE TABLE IF NOT EXISTS scores (
-       id INTEGER PRIMARY KEY AUTOINCREMENT,
-       user_id INTEGER NOT NULL,
-       level_id INTEGER NOT NULL,
-       score INTEGER NOT NULL,
-       completeness INTEGER,
-       efficiency INTEGER,
-       time_bonus INTEGER,
-       accuracy INTEGER,
-       submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-       FOREIGN KEY (user_id) REFERENCES users(id),
-       FOREIGN KEY (level_id) REFERENCES levels(id)
-     )")
-  
-  ;; Create indexes
-  (sqlite:execute-non-query *db*
-    "CREATE INDEX IF NOT EXISTS idx_user_progress_user ON user_progress(user_id)")
-  (sqlite:execute-non-query *db*
-    "CREATE INDEX IF NOT EXISTS idx_scores_user ON scores(user_id)")
-  (sqlite:execute-non-query *db*
-    "CREATE INDEX IF NOT EXISTS idx_scores_level ON scores(level_id)")
+  ;; Create tables
+  (mito:ensure-table-exists 'user)
+  (mito:ensure-table-exists 'level)
+  (mito:ensure-table-exists 'user-progress)
+  (mito:ensure-table-exists 'score)
   
   ;; Insert sample levels if none exist
-  (when (= 0 (query-one "SELECT COUNT(*) FROM levels"))
-    (insert-sample-levels)))
+  (when (= 0 (length (mito:select-dao 'level)))
+    (insert-sample-levels))
+  
+  (format t "Database initialized successfully~%"))
 
 (defun insert-sample-levels ()
   "Insert sample levels for testing"
   ;; Chapter 1, Level 1: Simple decision table
-  (sqlite:execute-non-query *db*
-    "INSERT INTO levels (chapter, level_number, title, description, level_type, difficulty, config, solution)
-     VALUES (1, 1, 'Email Notification System', 
-             'Create a decision table for an email notification system. Consider if the user is logged in and if they are a premium member.',
-             'decision_table', 'easy',
-             '{\"conditions\":[{\"id\":\"logged_in\",\"name\":\"User logged in?\",\"type\":\"boolean\"},{\"id\":\"premium\",\"name\":\"Premium member?\",\"type\":\"boolean\"}],\"actions\":[{\"id\":\"send_email\",\"name\":\"Send email notification\"},{\"id\":\"show_popup\",\"name\":\"Show popup notification\"}]}',
-             '{\"rules\":[{\"conditions\":{\"logged_in\":\"true\",\"premium\":\"true\"},\"actions\":{\"send_email\":true,\"show_popup\":true}},{\"conditions\":{\"logged_in\":\"true\",\"premium\":\"false\"},\"actions\":{\"send_email\":true,\"show_popup\":false}},{\"conditions\":{\"logged_in\":\"false\",\"premium\":\"na\"},\"actions\":{\"send_email\":false,\"show_popup\":true}}]}')")
+  (mito:create-dao 'level
+    :chapter 1
+    :level-number 1
+    :title "Email Notification System"
+    :description "Create a decision table for an email notification system. Consider if the user is logged in and if they are a premium member."
+    :level-type "decision_table"
+    :difficulty "easy"
+    :config "{\"conditions\":[{\"id\":\"logged_in\",\"name\":\"User logged in?\",\"type\":\"boolean\"},{\"id\":\"premium\",\"name\":\"Premium member?\",\"type\":\"boolean\"}],\"actions\":[{\"id\":\"send_email\",\"name\":\"Send email notification\"},{\"id\":\"show_popup\",\"name\":\"Show popup notification\"}]}"
+    :solution "{\"rules\":[{\"conditions\":{\"logged_in\":\"true\",\"premium\":\"true\"},\"actions\":{\"send_email\":true,\"show_popup\":true}},{\"conditions\":{\"logged_in\":\"true\",\"premium\":\"false\"},\"actions\":{\"send_email\":true,\"show_popup\":false}},{\"conditions\":{\"logged_in\":\"false\",\"premium\":\"na\"},\"actions\":{\"send_email\":false,\"show_popup\":true}}]}")
   
   ;; Chapter 1, Level 2
-  (sqlite:execute-non-query *db*
-    "INSERT INTO levels (chapter, level_number, title, description, level_type, difficulty, config, solution)
-     VALUES (1, 2, 'ATM Withdrawal Rules', 
-             'Create a decision table for ATM withdrawal validation. Consider account balance, daily limit, and card type.',
-             'decision_table', 'medium',
-             '{\"conditions\":[{\"id\":\"sufficient_balance\",\"name\":\"Sufficient balance?\",\"type\":\"boolean\"},{\"id\":\"within_daily_limit\",\"name\":\"Within daily limit?\",\"type\":\"boolean\"},{\"id\":\"card_active\",\"name\":\"Card active?\",\"type\":\"boolean\"}],\"actions\":[{\"id\":\"approve\",\"name\":\"Approve withdrawal\"},{\"id\":\"deny\",\"name\":\"Deny withdrawal\"},{\"id\":\"notify_bank\",\"name\":\"Notify bank\"}]}',
-             '{\"rules\":[{\"conditions\":{\"sufficient_balance\":\"true\",\"within_daily_limit\":\"true\",\"card_active\":\"true\"},\"actions\":{\"approve\":true,\"deny\":false,\"notify_bank\":false}},{\"conditions\":{\"sufficient_balance\":\"false\",\"within_daily_limit\":\"na\",\"card_active\":\"true\"},\"actions\":{\"approve\":false,\"deny\":true,\"notify_bank\":false}},{\"conditions\":{\"sufficient_balance\":\"true\",\"within_daily_limit\":\"false\",\"card_active\":\"true\"},\"actions\":{\"approve\":false,\"deny\":true,\"notify_bank\":true}},{\"conditions\":{\"sufficient_balance\":\"na\",\"within_daily_limit\":\"na\",\"card_active\":\"false\"},\"actions\":{\"approve\":false,\"deny\":true,\"notify_bank\":true}}]}')")
+  (mito:create-dao 'level
+    :chapter 1
+    :level-number 2
+    :title "ATM Withdrawal Rules"
+    :description "Create a decision table for ATM withdrawal validation. Consider account balance, daily limit, and card type."
+    :level-type "decision_table"
+    :difficulty "medium"
+    :config "{\"conditions\":[{\"id\":\"sufficient_balance\",\"name\":\"Sufficient balance?\",\"type\":\"boolean\"},{\"id\":\"within_daily_limit\",\"name\":\"Within daily limit?\",\"type\":\"boolean\"},{\"id\":\"card_active\",\"name\":\"Card active?\",\"type\":\"boolean\"}],\"actions\":[{\"id\":\"approve\",\"name\":\"Approve withdrawal\"},{\"id\":\"deny\",\"name\":\"Deny withdrawal\"},{\"id\":\"notify_bank\",\"name\":\"Notify bank\"}]}"
+    :solution "{\"rules\":[{\"conditions\":{\"sufficient_balance\":\"true\",\"within_daily_limit\":\"true\",\"card_active\":\"true\"},\"actions\":{\"approve\":true,\"deny\":false,\"notify_bank\":false}},{\"conditions\":{\"sufficient_balance\":\"false\",\"within_daily_limit\":\"na\",\"card_active\":\"true\"},\"actions\":{\"approve\":false,\"deny\":true,\"notify_bank\":false}},{\"conditions\":{\"sufficient_balance\":\"true\",\"within_daily_limit\":\"false\",\"card_active\":\"true\"},\"actions\":{\"approve\":false,\"deny\":true,\"notify_bank\":true}},{\"conditions\":{\"sufficient_balance\":\"na\",\"within_daily_limit\":\"na\",\"card_active\":\"false\"},\"actions\":{\"approve\":false,\"deny\":true,\"notify_bank\":true}}]}")
   
   ;; Chapter 2, Level 1: Simple pairwise
-  (sqlite:execute-non-query *db*
-    "INSERT INTO levels (chapter, level_number, title, description, level_type, difficulty, config, solution)
-     VALUES (2, 1, 'Browser Testing', 
-             'Create a minimal pairwise test set for a web application. Test across different browsers and operating systems.',
-             'pairwise', 'easy',
-             '{\"parameters\":[{\"id\":\"browser\",\"name\":\"Browser\",\"values\":[\"Chrome\",\"Firefox\",\"Safari\"]},{\"id\":\"os\",\"name\":\"Operating System\",\"values\":[\"Windows\",\"macOS\",\"Linux\"]}]}',
-             '{\"minTests\":3,\"optimalTests\":4,\"requiredCoverage\":100}')")
+  (mito:create-dao 'level
+    :chapter 2
+    :level-number 1
+    :title "Browser Testing"
+    :description "Create a minimal pairwise test set for a web application. Test across different browsers and operating systems."
+    :level-type "pairwise"
+    :difficulty "easy"
+    :config "{\"parameters\":[{\"id\":\"browser\",\"name\":\"Browser\",\"values\":[\"Chrome\",\"Firefox\",\"Safari\"]},{\"id\":\"os\",\"name\":\"Operating System\",\"values\":[\"Windows\",\"macOS\",\"Linux\"]}]}"
+    :solution "{\"minTests\":3,\"optimalTests\":4,\"requiredCoverage\":100}")
   
   (format t "Sample levels inserted~%"))
-
-(defun execute-query (sql &rest params)
-  "Execute a SELECT query and return results"
-  (apply #'sqlite:execute-to-list *db* sql params))
-
-(defun execute-non-query (sql &rest params)
-  "Execute an INSERT/UPDATE/DELETE query"
-  (apply #'sqlite:execute-non-query *db* sql params))
-
-(defun query-one (sql &rest params)
-  "Execute query and return first result"
-  (let ((results (apply #'execute-query sql params)))
-    (when results
-      (caar results))))
-
-(defun query-all (sql &rest params)
-  "Execute query and return all results"
-  (apply #'execute-query sql params))

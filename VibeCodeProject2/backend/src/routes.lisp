@@ -32,6 +32,12 @@
   (setf (header-out :access-control-allow-methods) "GET, POST, OPTIONS")
   (setf (header-out :access-control-allow-headers) "Content-Type"))
 
+;; Handle CORS preflight requests
+(define-easy-handler (options-handler :uri "/api/*") ()
+  (add-cors-headers)
+  (setf (return-code*) 200)
+  "")
+
 ;; Registration endpoint
 (define-easy-handler (register :uri "/api/register") (username password email)
   (add-cors-headers)
@@ -70,29 +76,33 @@
 ;; Submit solution
 (define-easy-handler (submit-solution :uri "/api/submit") ()
   (add-cors-headers)
-  (let* ((post-data (raw-post-data :force-text t))
-         (json-data (cl-json:decode-json-from-string post-data))
-         (user-id (cdr (assoc :user-id json-data)))
-         (level-id (cdr (assoc :level-id json-data)))
-         (solution (cdr (assoc :solution json-data))))
-    (if (and user-id level-id solution)
-        (let* ((level (get-level-by-id level-id))
-               (level-type (cdr (assoc :level-type level)))
-               (level-solution (cdr (assoc :solution level)))
-               (level-config (cdr (assoc :config level)))
-               (result (if (string= level-type "decision_table")
-                          (validate-decision-table solution level-solution)
-                          (validate-pairwise solution level-solution level-config)))
-               (total-score (cdr (assoc :total result)))
-               (completeness (cdr (assoc :completeness result)))
-               (efficiency (cdr (assoc :efficiency result)))
-               (accuracy (cdr (assoc :accuracy result))))
-          ;; Save score
-          (save-score user-id level-id total-score completeness efficiency 0 accuracy)
-          ;; Update progress
-          (update-user-progress user-id level-id total-score)
-          (success-response result))
-        (error-response "User ID, level ID, and solution required"))))
+  (handler-case
+      (let* ((post-data (raw-post-data :force-text t))
+             (json-data (cl-json:decode-json-from-string post-data))
+             (user-id (cdr (assoc :user-id json-data)))
+             (level-id (cdr (assoc :level-id json-data)))
+             (solution (cdr (assoc :solution json-data))))
+        (if (and user-id level-id solution)
+            (let* ((level (get-level-by-id level-id))
+                   (level-type (cdr (assoc :level-type level)))
+                   (level-solution (cdr (assoc :solution level)))
+                   (level-config (cdr (assoc :config level)))
+                   (result (if (string= level-type "decision_table")
+                              (validate-decision-table solution level-solution)
+                              (validate-pairwise solution level-solution level-config)))
+                   (total-score (cdr (assoc :total result)))
+                   (completeness (cdr (assoc :completeness result)))
+                   (efficiency (cdr (assoc :efficiency result)))
+                   (accuracy (cdr (assoc :accuracy result))))
+              ;; Save score
+              (save-score user-id level-id total-score completeness efficiency 0 accuracy)
+              ;; Update progress
+              (update-user-progress user-id level-id total-score)
+              (success-response result))
+            (error-response "User ID, level ID, and solution required")))
+    (error (e)
+      (format t "Submit solution error: ~a~%" e)
+      (error-response (format nil "Submission failed: ~a" e)))))
 
 ;; Get user progress
 (define-easy-handler (get-progress :uri "/api/progress") (user-id)
