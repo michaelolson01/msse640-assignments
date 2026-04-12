@@ -13,3 +13,5 @@ _opam/
 
 # Ignore the Databases
 *.db
+*.sqlite
+*.sqlite3
