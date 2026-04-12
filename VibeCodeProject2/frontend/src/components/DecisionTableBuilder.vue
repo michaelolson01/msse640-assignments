@@ -211,9 +211,15 @@ export default {
 
 .rule-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   gap: 10px;
+  position: relative;
+}
+
+.rule-header button {
+  position: absolute;
+  right: 0;
 }
 
 .condition-row {
