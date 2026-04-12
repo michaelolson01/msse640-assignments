@@ -4,7 +4,9 @@
   :license "MIT"
   :depends-on (:hunchentoot
                :cl-json
-               :sqlite
+               :mito
+               :sxql
+               :local-time
                :ironclad
                :cl-ppcre
                :alexandria)

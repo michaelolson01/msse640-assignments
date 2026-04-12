@@ -1,5 +1,12 @@
 ;;;; Startup script for TestCraft Academy
-(load "testcraft.asd")
+
+;; Ensure ASDF is loaded
+(require :asdf)
+
+;; Add current directory to ASDF source registry so it can find testcraft.asd
+(push (uiop:getcwd) asdf:*central-registry*)
+
+;; Load the system using quicklisp
 (ql:quickload :testcraft)
 
 (format t "~%====================================~%")

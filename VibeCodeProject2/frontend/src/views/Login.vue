@@ -77,18 +77,25 @@ export default {
           response = await api.login(this.username, this.password)
         }
 
-        if (response.success) {
+        if (response && response.success) {
+          // Store user data
           this.$store.dispatch('login', response.data)
           
-          // Load user progress
-          const progressResponse = await api.getProgress(response.data.id)
-          if (progressResponse.success) {
-            this.$store.dispatch('setProgress', progressResponse.data)
+          // Try to load user progress, but don't fail if it doesn't work
+          try {
+            const progressResponse = await api.getProgress(response.data.id)
+            if (progressResponse && progressResponse.success) {
+              this.$store.dispatch('setProgress', progressResponse.data)
+            }
+          } catch (progressError) {
+            console.warn('Could not load progress:', progressError)
+            // Continue anyway - progress loading is not critical
           }
           
+          // Navigate to levels page
           this.$router.push('/levels')
         } else {
-          this.errorMessage = response.error || 'An error occurred'
+          this.errorMessage = (response && response.error) || 'An error occurred'
         }
       } catch (error) {
         console.error('Login/Register error:', error)

@@ -25,8 +25,14 @@ const routes = [
   },
   {
     path: '/level/:id',
-    name: 'Level',
+    name: 'DecisionTableLevel',
     component: DecisionTableLevel,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/pairwise/:id',
+    name: 'PairwiseLevel',
+    component: PairwiseLevel,
     meta: { requiresAuth: true }
   }
 ]

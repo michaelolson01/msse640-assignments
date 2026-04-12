@@ -10,7 +10,7 @@
       <div class="parameter-list">
         <div v-for="param in parameters" :key="param.id" class="parameter-item">
           <strong>{{ param.name }}:</strong>
-          <span class="values">{{ param.values.join(', ') }}</span>
+          <span class="values">{{ (param.values || []).join(', ') }}</span>
         </div>
       </div>
     </div>
@@ -35,7 +35,7 @@
               <label>{{ param.name }}:</label>
               <select v-model="test[param.id]">
                 <option value="">-- Select --</option>
-                <option v-for="value in param.values" :key="value" :value="value">
+                <option v-for="value in (param.values || [])" :key="value" :value="value">
                   {{ value }}
                 </option>
               </select>
@@ -91,14 +91,70 @@ export default {
       return Math.min(100, Math.round((coveredPairs / totalPairs) * 100))
     }
   },
+  watch: {
+    level: {
+      handler() {
+        this.initializeBuilder()
+      },
+      deep: true
+    }
+  },
   mounted() {
     this.initializeBuilder()
   },
   methods: {
     initializeBuilder() {
-      const config = this.level.config
-      this.parameters = config.parameters || []
-      this.addTestCase()
+      if (!this.level) {
+        console.warn('Level not loaded yet')
+        return
+      }
+      
+      let config = this.level.config
+      this.parameters = []
+      
+      // Handle nested array structure from API
+      // config is an array of arrays, each containing [label, param1, param2, ...]
+      if (Array.isArray(config) && config.length > 0) {
+        config.forEach((group, groupIdx) => {
+          if (Array.isArray(group)) {
+            // Skip the first item (label like "conditions" or "actions")
+            // and extract the actual parameter objects
+            for (let i = 1; i < group.length; i++) {
+              const param = group[i]
+              if (typeof param === 'object' && param !== null) {
+                const id = param.id || `param-${groupIdx}-${i}`
+                const name = param.name || param.id || `Parameter ${this.parameters.length + 1}`
+                
+                // Extract values - could be in various formats
+                let values = []
+                if (Array.isArray(param.values)) {
+                  values = param.values
+                } else if (param.values && typeof param.values === 'object') {
+                  values = Object.keys(param.values)
+                } else if (param.type === 'boolean') {
+                  // Boolean parameters have true/false values
+                  values = ['true', 'false']
+                } else if (!param.values && !param.type) {
+                  // Action parameters without explicit values - use yes/no or true/false
+                  values = ['true', 'false']
+                }
+                
+                this.parameters.push({
+                  id,
+                  name,
+                  values: values || []
+                })
+              }
+            }
+          }
+        })
+      }
+      
+      console.log('Parameters loaded:', this.parameters)
+      
+      if (this.testCases.length === 0) {
+        this.addTestCase()
+      }
     },
     addTestCase() {
       const newTest = {}
@@ -118,7 +174,11 @@ export default {
         for (let j = i + 1; j < this.parameters.length; j++) {
           const param1 = this.parameters[i]
           const param2 = this.parameters[j]
-          total += param1.values.length * param2.values.length
+          const values1 = (param1.values || []).length
+          const values2 = (param2.values || []).length
+          if (values1 > 0 && values2 > 0) {
+            total += values1 * values2
+          }
         }
       }
       return total

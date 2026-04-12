@@ -4,7 +4,11 @@
     
     <div v-if="loading" class="loading">Loading leaderboard...</div>
     
-    <div v-else-if="scores.length === 0" class="no-scores">
+    <div v-else-if="error" class="error">
+      {{ error }}
+    </div>
+    
+    <div v-else-if="!scores || scores.length === 0" class="no-scores">
       No scores yet. Be the first to complete this level!
     </div>
     
@@ -43,7 +47,8 @@ export default {
   data() {
     return {
       scores: [],
-      loading: true
+      loading: true,
+      error: null
     }
   },
   async mounted() {
@@ -54,10 +59,15 @@ export default {
       try {
         const response = await api.getLeaderboard(this.levelId)
         if (response.success) {
-          this.scores = response.data
+          this.scores = response.data || []
+        } else {
+          this.error = response.message || 'Failed to load leaderboard'
+          this.scores = []
         }
       } catch (error) {
         console.error('Error loading leaderboard:', error)
+        this.error = 'Error loading leaderboard'
+        this.scores = []
       } finally {
         this.loading = false
       }
@@ -87,10 +97,16 @@ export default {
   margin-bottom: 20px;
 }
 
-.loading, .no-scores {
+.loading, .no-scores, .error {
   text-align: center;
   padding: 30px;
   color: #7f8c8d;
+}
+
+.error {
+  color: #d32f2f;
+  background: #ffebee;
+  border-radius: 4px;
 }
 
 .leaderboard-list {

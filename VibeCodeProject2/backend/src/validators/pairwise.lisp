@@ -7,11 +7,12 @@
 
 (defun validate-pairwise (user-tests solution-data parameters-data)
   "Validate pairwise test set"
-  (let* ((parameters (cdr (assoc :parameters parameters-data)))
-         (coverage (calculate-coverage user-tests parameters))
+  (let* ((test-cases (cdr (assoc :test-cases user-tests)))
+         (parameters (cdr (assoc :parameters parameters-data)))
+         (coverage (calculate-coverage test-cases parameters))
          (min-tests (cdr (assoc :min-tests solution-data)))
          (optimal-tests (cdr (assoc :optimal-tests solution-data)))
-         (test-count (length user-tests))
+         (test-count (length test-cases))
          (completeness (min 100 coverage))
          (efficiency (calculate-test-efficiency test-count optimal-tests))
          (accuracy 20)) ; Full accuracy if coverage is good

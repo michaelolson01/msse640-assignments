@@ -1,48 +1,42 @@
 (defpackage :testcraft.models.level
-  (:use :cl)
+  (:use :cl :mito)
   (:import-from :testcraft.database
-                :execute-query)
+                :level)
   (:export :get-all-levels
            :get-level-by-id
            :get-levels-by-chapter))
 
 (in-package :testcraft.models.level)
 
-(defun parse-level-row (row)
-  "Parse a level row into an alist"
-  `((:id . ,(first row))
-    (:chapter . ,(second row))
-    (:level-number . ,(third row))
-    (:title . ,(fourth row))
-    (:description . ,(fifth row))
-    (:level-type . ,(sixth row))
-    (:difficulty . ,(seventh row))
-    (:config . ,(cl-json:decode-json-from-string (eighth row)))
-    (:solution . ,(cl-json:decode-json-from-string (ninth row)))))
+(defun level-to-alist (level)
+  "Convert a level DAO object to an alist"
+  `((:id . ,(mito:object-id level))
+    (:chapter . ,(slot-value level 'testcraft.database::chapter))
+    (:level-number . ,(slot-value level 'testcraft.database::level-number))
+    (:title . ,(slot-value level 'testcraft.database::title))
+    (:description . ,(slot-value level 'testcraft.database::description))
+    (:level-type . ,(slot-value level 'testcraft.database::level-type))
+    (:difficulty . ,(slot-value level 'testcraft.database::difficulty))
+    (:config . ,(cl-json:decode-json-from-string 
+                 (or (slot-value level 'testcraft.database::config) "{}")))
+    (:solution . ,(cl-json:decode-json-from-string 
+                   (or (slot-value level 'testcraft.database::solution) "{}")))))
 
 (defun get-all-levels ()
   "Get all levels"
-  (let ((results (execute-query
-                  "SELECT id, chapter, level_number, title, description, 
-                          level_type, difficulty, config, solution 
-                   FROM levels ORDER BY chapter, level_number")))
-    (mapcar #'parse-level-row results)))
+  (let ((levels (mito:select-dao 'level
+                  (sxql:order-by :chapter :level-number))))
+    (mapcar #'level-to-alist levels)))
 
 (defun get-level-by-id (level-id)
   "Get a specific level by ID"
-  (let ((results (execute-query
-                  "SELECT id, chapter, level_number, title, description, 
-                          level_type, difficulty, config, solution 
-                   FROM levels WHERE id = ?"
-                  level-id)))
-    (when results
-      (parse-level-row (car results)))))
+  (let ((level (mito:find-dao 'level :id level-id)))
+    (when level
+      (level-to-alist level))))
 
 (defun get-levels-by-chapter (chapter)
   "Get all levels in a chapter"
-  (let ((results (execute-query
-                  "SELECT id, chapter, level_number, title, description, 
-                          level_type, difficulty, config, solution 
-                   FROM levels WHERE chapter = ? ORDER BY level_number"
-                  chapter)))
-    (mapcar #'parse-level-row results)))
+  (let ((levels (mito:select-dao 'level
+                  (sxql:where (:= :chapter chapter))
+                  (sxql:order-by :level-number))))
+    (mapcar #'level-to-alist levels)))

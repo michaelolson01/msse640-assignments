@@ -25,9 +25,11 @@ export default createStore({
     },
     SET_PROGRESS(state, progress) {
       state.progress = {}
-      progress.forEach(p => {
-        state.progress[p['level-id']] = p
-      })
+      if (progress && Array.isArray(progress)) {
+        progress.forEach(p => {
+          state.progress[p['level-id']] = p
+        })
+      }
     }
   },
   actions: {

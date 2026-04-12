@@ -1,9 +1,7 @@
 (defpackage :testcraft.auth
-  (:use :cl)
+  (:use :cl :mito)
   (:import-from :testcraft.database
-                :execute-query
-                :execute-non-query
-                :query-one)
+                :user)
   (:import-from :testcraft.utils
                 :hash-password
                 :verify-password
@@ -17,44 +15,43 @@
 (defun register-user (username password &optional email)
   "Register a new user"
   (handler-case
-      (progn
-        (execute-non-query
-         "INSERT INTO users (username, password_hash, email) VALUES (?, ?, ?)"
-         username
-         (hash-password password)
-         (or email ""))
-        (let ((user-id (query-one "SELECT last_insert_rowid()")))
-          `((:id . ,user-id)
-            (:username . ,username)
-            (:email . ,email))))
+      (let* ((email-value (or email ""))
+             (user (mito:create-dao 'user
+                     :username username
+                     :password-hash (hash-password password)
+                     :email email-value)))
+        `((:id . ,(mito:object-id user))
+          (:username . ,username)
+          (:email . ,email-value)))
     (error (e)
       (format t "Error registering user: ~a~%" e)
       nil)))
 
 (defun authenticate-user (username password)
   "Authenticate a user and return user info"
-  (let ((result (execute-query
-                 "SELECT id, username, password_hash, email FROM users WHERE username = ?"
-                 username)))
-    (when result
-      (let* ((row (car result))
-             (user-id (first row))
-             (user-name (second row))
-             (password-hash (third row))
-             (email (fourth row)))
-        (when (verify-password password password-hash)
-          `((:id . ,user-id)
-            (:username . ,user-name)
-            (:email . ,email)
-            (:token . ,(generate-token user-id))))))))
+  (handler-case
+      (let ((user (car (mito:select-dao 'user
+                         (sxql:where (:= :username username))))))
+        (when user
+          (let ((password-hash (slot-value user 'testcraft.database::password-hash))
+                (user-id (mito:object-id user)))
+            (when (verify-password password password-hash)
+              `((:id . ,user-id)
+                (:username . ,(slot-value user 'testcraft.database::username))
+                (:email . ,(or (slot-value user 'testcraft.database::email) ""))
+                (:token . ,(generate-token user-id)))))))
+    (error (e)
+      (format t "Error authenticating user: ~a~%" e)
+      nil)))
 
 (defun get-user-by-id (user-id)
   "Get user by ID"
-  (let ((result (execute-query
-                 "SELECT id, username, email FROM users WHERE id = ?"
-                 user-id)))
-    (when result
-      (let* ((row (car result)))
-        `((:id . ,(first row))
-          (:username . ,(second row))
-          (:email . ,(third row)))))))
+  (handler-case
+      (let ((user (mito:find-dao 'user :id user-id)))
+        (when user
+          `((:id . ,(mito:object-id user))
+            (:username . ,(slot-value user 'testcraft.database::username))
+            (:email . ,(or (slot-value user 'testcraft.database::email) "")))))
+    (error (e)
+      (format t "Error getting user by ID: ~a~%" e)
+      nil)))
