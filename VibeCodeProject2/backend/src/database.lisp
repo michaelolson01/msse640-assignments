@@ -42,8 +42,7 @@
                :default 0)
    (attempts :col-type :integer
              :default 0)
-   (completed-at :col-type :timestamp
-                 :default nil)))
+   (completed-at :col-type :timestamp)))
 
 (mito:deftable score ()
   ((user-id :col-type :integer
