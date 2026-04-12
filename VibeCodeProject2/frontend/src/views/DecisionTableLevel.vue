@@ -12,7 +12,7 @@
       </div>
 
       <!-- Decision Table Builder -->
-      <div v-if="level['level-type'] === 'decision_table'" class="decision-table-section">
+      <div v-if="level.levelType === 'decision_table'" class="decision-table-section">
         <DecisionTableBuilder 
           :level="level"
           @submit="handleSubmit"
