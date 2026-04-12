@@ -33,7 +33,10 @@
   (setf (header-out :access-control-allow-headers) "Content-Type"))
 
 ;; Handle CORS preflight requests
-(define-easy-handler (options-handler :uri "/api/*") ()
+(define-easy-handler (options-handler :uri (lambda (request)
+                                              (and (eq (request-method request) :OPTIONS)
+                                                   (starts-with-subseq "/api/" (script-name request)))))
+    ()
   (add-cors-headers)
   (setf (return-code*) 200)
   "")
@@ -76,6 +79,10 @@
 ;; Submit solution
 (define-easy-handler (submit-solution :uri "/api/submit") ()
   (add-cors-headers)
+  ;; Handle OPTIONS preflight
+  (when (eq (request-method*) :OPTIONS)
+    (setf (return-code*) 200)
+    (return-from submit-solution ""))
   (handler-case
       (let* ((post-data (raw-post-data :force-text t))
              (json-data (cl-json:decode-json-from-string post-data))
