@@ -62,12 +62,12 @@
           rules))
 
 (defun scenario-equal (scenario1 scenario2)
-  "Check if two scenarios are equal"
-  (and (= (hash-table-count scenario1)
-          (hash-table-count scenario2))
-       (loop for key being the hash-keys of scenario1
-             using (hash-value val1)
-             always (equal val1 (gethash key scenario2)))))
+  "Check if two scenarios are equal (works with alists)"
+  (and (= (length scenario1) (length scenario2))
+       (every (lambda (pair)
+                (equal (cdr pair)
+                       (cdr (assoc (car pair) scenario2 :test #'equal))))
+              scenario1)))
 
 (defun rule-matches (user-rule solution-rule)
   "Check if user rule matches solution rule"
@@ -79,9 +79,9 @@
          (actions-equal user-actions sol-actions))))
 
 (defun actions-equal (actions1 actions2)
-  "Check if two action sets are equal"
-  (and (= (hash-table-count actions1)
-          (hash-table-count actions2))
-       (loop for key being the hash-keys of actions1
-             using (hash-value val1)
-             always (equal val1 (gethash key actions2)))))
+  "Check if two action sets are equal (works with alists)"
+  (and (= (length actions1) (length actions2))
+       (every (lambda (pair)
+                (equal (cdr pair)
+                       (cdr (assoc (car pair) actions2 :test #'equal))))
+              actions1)))
