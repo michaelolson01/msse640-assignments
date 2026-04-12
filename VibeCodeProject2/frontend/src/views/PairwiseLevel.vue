@@ -37,6 +37,11 @@
           </div>
         </div>
       </div>
+
+      <!-- Leaderboard -->
+      <div class="leaderboard-section">
+        <Leaderboard :level-id="level.id" />
+      </div>
     </div>
     </div>
   </div>
@@ -45,12 +50,14 @@
 <script>
 import { mapState } from 'vuex'
 import PairwiseTestBuilder from '@/components/PairwiseTestBuilder.vue'
+import Leaderboard from '@/components/Leaderboard.vue'
 import api from '@/services/api'
 
 export default {
   name: 'PairwiseLevel',
   components: {
-    PairwiseTestBuilder
+    PairwiseTestBuilder,
+    Leaderboard
   },
   data() {
     return {
@@ -183,6 +190,10 @@ export default {
 .score-item .value {
   color: #333;
   font-weight: 600;
+}
+
+.leaderboard-section {
+  margin-top: 30px;
 }
 
 @media (max-width: 768px) {
