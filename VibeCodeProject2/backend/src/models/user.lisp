@@ -37,10 +37,11 @@
             (setf (slot-value existing 'testcraft.database::completed-at) (local-time:now)))
           (mito:save-dao existing))
         ;; Insert new progress
-        (mito:create-dao 'user-progress
-          :user-id user-id
-          :level-id level-id
-          :best-score score
-          :attempts 1
-          :completed (if (>= score 100) t nil)
-          :completed-at (when (>= score 100) (local-time:now))))))
+        (let ((completed-p (>= score 100)))
+          (mito:create-dao 'user-progress
+            :user-id user-id
+            :level-id level-id
+            :best-score score
+            :attempts 1
+            :completed completed-p
+            :completed-at (when completed-p (local-time:now)))))))
