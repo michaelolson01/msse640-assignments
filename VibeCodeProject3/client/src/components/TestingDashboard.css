@@ -1,0 +1,251 @@
+.testing-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.tab-buttons {
+  display: flex;
+  gap: 10px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  color: #667eea;
+}
+
+.tab-btn.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+.tab-content {
+  padding: 15px 0;
+}
+
+.description {
+  color: #666;
+  margin-bottom: 15px;
+  font-style: italic;
+}
+
+/* State Testing */
+.coverage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.coverage-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #ddd;
+}
+
+.coverage-item.covered {
+  border-left-color: #28a745;
+  background: #d4edda;
+}
+
+.coverage-item.not-covered {
+  border-left-color: #dc3545;
+  background: #f8d7da;
+}
+
+.coverage-icon {
+  font-size: 1.2rem;
+}
+
+.coverage-transition {
+  flex: 1;
+  font-weight: 600;
+}
+
+.coverage-count {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.history-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #e0e0e0;
+}
+
+.history-section h4 {
+  margin-bottom: 10px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: #f0f4ff;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.history-number {
+  color: #667eea;
+  font-weight: bold;
+  min-width: 40px;
+}
+
+.history-transition {
+  flex: 1;
+  font-weight: 600;
+}
+
+.history-mode {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.no-data {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+  font-style: italic;
+}
+
+/* Control Flow Testing */
+.path-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.path-item {
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #ddd;
+  transition: all 0.3s ease;
+}
+
+.path-item.active-path {
+  border-left-color: #667eea;
+  background: #f0f4ff;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.path-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.path-icon {
+  font-size: 1.2rem;
+}
+
+.path-condition {
+  margin: 8px 0;
+}
+
+.path-condition code {
+  background: #2c3e50;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.path-description {
+  color: #666;
+  font-size: 0.95rem;
+  margin-top: 8px;
+}
+
+/* Data Flow Testing */
+.data-flow-table {
+  overflow-x: auto;
+}
+
+.data-flow-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-flow-table th,
+.data-flow-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.data-flow-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.data-flow-table tr:hover {
+  background: #f0f4ff;
+}
+
+.data-flow-table code {
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  color: #d63384;
+}
+
+.lifecycle-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: #667eea;
+  color: white;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .tab-buttons {
+    flex-direction: column;
+  }
+  
+  .tab-btn {
+    border-bottom: none;
+    border-left: 3px solid transparent;
+  }
+  
+  .tab-btn.active {
+    border-left-color: #667eea;
+  }
+  
+  .data-flow-table {
+    font-size: 0.85rem;
+  }
+  
+  .data-flow-table th,
+  .data-flow-table td {
+    padding: 8px;
+  }
+}
